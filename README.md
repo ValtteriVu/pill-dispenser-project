@@ -34,7 +34,6 @@ Run the installer and **make sure to tick the "Add path to environment variable"
 ### Step 2: Cloning the SDK
 
 Clone the Pico SDK using the following terminal commands.  
-**Note: At the time of writing, the latest version of the SDK (v2.1.0) has some broken interactions with FreeRTOS. Using the earlier 2.0.0 version fixes the issues.**  
 All commands were tested using Windows Powershell.
 
 ```
@@ -232,7 +231,6 @@ sudo apt install git python3 build-essential gcc-arm-none-eabi libnewlib-arm-non
 ### Step 2: Cloning the SDK
 
 Clone the Pico SDK using the following terminal commands.  
-**Note: At the time of writing, the latest version of the SDK (v2.1.0) has some broken interactions with FreeRTOS. Using the earlier 2.0.0 version fixes the issues.**
 
 ```
 mkdir ~/pico
@@ -240,7 +238,6 @@ cd ~/pico
 git clone https://github.com/raspberrypi/pico-sdk.git
 cd pico-sdk
 git submodule update --init
-git checkout tags/2.0.0
 ```
 
 ---
