@@ -1,93 +1,407 @@
-# RPi Pico minimal
+# RPi Pico and CLion
 
+Minimal CMake project for Raspberry Pi PicoW.
 
+## Cloning the repository
 
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+To clone the repository using HTTPS, use the following command:
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.metropolia.fi/lansk/rpi-pico-minimal.git
-git branch -M main
-git push -uf origin main
+git clone https://gitlab.metropolia.fi/lansk/rpi-pico-minimal.git
 ```
 
-## Integrate with your tools
+## IDE Configuration - CLion - Windows
 
-- [ ] [Set up project integrations](https://gitlab.metropolia.fi/lansk/rpi-pico-minimal/-/settings/integrations)
+**Note: CLion has a long standing issue with OpenOCD and file paths that have spaces in them.  
+To avoid any issues, clone the SDK and the requisite tools using a file path with no spaces in it.  
+All embedded projects should also be created using file paths that have no spaces in them.  
+This guide uses the file path "C:\pico" for this reason.**  
+Should you want to use a different path (while still maintaining the no spaces policy), replace **"C:\pico"** with your own location.
 
-## Collaborate with your team
+Note: This guide assumes that you have installed [CLion](https://www.jetbrains.com/clion/download/#section=windows) and [Git for Windows](https://git-scm.com/downloads/win).
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+---
 
-## Test and Deploy
+### Step 1: Installing the ARM GNU Toolchain
 
-Use the built-in continuous integration in GitLab.
+Download the ARM GNU Toolchain [here](https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-mingw-w64-i686-arm-none-eabi.exe).  
+Run the installer and **make sure to tick the "Add path to environment variable" checkbox.** The default installation path is fine.
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+![Screenshot of "Add path to environment variable" checkbox](docs/images/toolchain-path-checkbox.png?raw=true)
 
-***
+---
 
-# Editing this README
+### Step 2: Cloning the SDK
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+Clone the Pico SDK using the following terminal commands.  
+**Note: At the time of writing, the latest version of the SDK (v2.1.0) has some broken interactions with FreeRTOS. Using the earlier 2.0.0 version fixes the issues.**  
+All commands were tested using Windows Powershell.
 
-## Suggestions for a good README
+```
+mkdir c:/pico
+cd c:/pico
+git clone https://github.com/raspberrypi/pico-sdk.git
+cd pico-sdk
+git submodule update --init
+```
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+---
 
-## Name
-Choose a self-explaining name for your project.
+### Step 3: Installing OpenOCD
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+Download the OpenoOCD [here](https://github.com/raspberrypi/pico-sdk-tools/releases/download/v2.1.0-0/openocd-0.12.0+dev-x64-win.zip).  
+Extract the files into **"C:\pico\openocd"**.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+Using the terminal run the following command to edit one of the included script files:
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+```
+notepad c:/pico/openocd/scripts/board/pico-debug.cfg
+```
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+Edit the line `source [find target/rp2040-core0.cfg]` to match the following: `source [find target/rp2040.cfg]`.  
+Save the file and close Notepad.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+In order to get CLion to recognize OpenOCD correctly, the executable and it's associated .dll files have to be moved.  
+Using the File Explorer, navigate to the OpenOCD installation directory (C:\pico\openocd).
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+**"C:\pico\openocd"** contents:
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+![Screenshot of openocd folder before changes](docs/images/openocd-folder-before.png?raw=true)
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+Create a new folder called **"bin"** and move openocd.exe and the two .dll files into this folder.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+**"C:\pico\openocd"** and **"C:\pico\openocd\bin"** contents:
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+![Screenshot of openocd folder after changes](docs/images/openocd-folder-after.png?raw=true)
+![Screenshot of openocd/bin folder](docs/images/openocd-bin-folder.png?raw=true)
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+---
 
-## License
-For open source projects, say how it is licensed.
+### Step 4: Setting up CLion for building
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+Clone the repository to a file path without spaces in it using the cloning instructions at the top of the page.
+
+Finally, launch CLion, and open the folder containing the cloned repository.  
+On the **Open Project Wizard** window, check the box labeled **"Reload CMake project on editing..."** and in the box labeled **"Environment"** add the environment variable `PICO_SDK_PATH=C:\pico\pico-sdk`.
+
+![Screenshot of CLion Open Project Wizard window](docs/images/new-project-settings.jpg?raw=true)
+
+CMake should now configure the project (if there is an warning about picotool, it can be ignored safely).
+
+After successful configuration, the output should look like this:
+
+![Screenshot of CMake output after successful configuration](docs/images/cmake-configure-done.png?raw=true)
+
+It should now be possible to build the project using the **"Build"** button at the top left corner of the window.
+
+![Screenshot of CLion "Build" button](docs/images/clion-build.png?raw=true)
+
+After the build finishes, the output should look something like this:
+
+![Screenshot of the output from a successful build](docs/images/cmake-build-success.png?raw=true)
+
+---
+
+### Step 5: Setting up CLion for programming/debugging
+
+First, wire up the Raspberry Pi Debug Probe according to the instructions from [here](https://www.raspberrypi.com/documentation/microcontrollers/debug-probe.html).  
+Note that on the Pico W, the JST header is in a slightly different location.  
+**Take extra care when connecting the small JST headers, using excessive force can cause damage to the headers.**
+
+At the top right corner of the CLion interace, click the menu button and find and click the **"Settings..."** option.
+
+![Screenshot of CLion "Menu" button](docs/images/clion-menu.png?raw=true)
+![Screenshot of CLion "File" menu with "Settings" option marked](docs/images/clion-menu-settings.png?raw=true)
+
+Under **"Build, Execution, Deployment"** select the **"Embedded Development"** option.  
+Set the OpenOCD executable location here and click on the **"Test"** button.  
+The output popup should contain some version information about OpenOCD and the background should be green.
+
+![Screenshot of a correctly set OpenOCD location](docs/images/clion-openocd-location.png?raw=true)
+
+Under **"Embedded Development"**, select the **"RTOS Integration"** option.  
+Check the **"Enable RTOS Integration"** and select **"FreeRTOS"** from the dropdown.
+
+![Screenshot of "RTOS Integration" window](docs/images/clion-rtos-integration.png?raw=true)
+
+Click **"OK"** to save the settings and close the window.
+
+At the top left corner of the CLion interface, click on the project name, and then the **"Edit Configurations..."** option.
+
+![Screenshot of CLion project "Edit configurations" option](docs/images/clion-config-edit.png?raw=true)
+
+At the top right corner of the **"Run/Debug Configurations"** window, click the **"+"**-sign and then scroll down to find and click the **"OpenOCD Download & Run"** option.
+
+![Screenshot of CLion "Run/Debug Configurations" with the **"OpenOCD Download & Run"** option](docs/images/clion-openocd-config.png?raw=true)
+
+On the new window, click the **"Assist..."** button for the **"Board config file"** setting.
+
+![Screenshot of CLion "OpenOCD Download & Run" settings page](docs/images/clion-openocd-config-debug-board.png?raw=true)
+
+Start typing to search for **"pico-debug"**, find and select the **"pico-debug.cfg"** and click **"Use"**.
+
+![Screenshot of CLion "Board config](docs/images/clion-openocd-config-debug-board-search.png?raw=true)
+
+Configure **"Executable binary"** and the **"Download"** options to match the figure below.
+
+![Screenshot of CLion "Board config](docs/images/clion-openocd-config-complete.png?raw=true)
+
+Click **"OK"** to save and close the window.
+
+Connect the USB cables from **both** the Pico and the Debug Probe to the computer.
+
+Clicking the **"Run"** button at the top left corner of the CLion interface should now build and program the device.
+
+![Screenshot of CLion "Run" button](docs/images/clion-run.png?raw=true)
+
+Output from a successful programming (look for the line that reads **"Programming Finished"**):
+
+![Screenshot of the output from a successful programming](docs/images/openocd-program-success.png?raw=true)
+
+The program should now blink the LED on the Pico.
+
+---
+
+### Step 6: Setting up CLion Serial Monitor
+
+The Pico Debug Probe sends console prints (printf statements etc.) through a serial connection. To allow printing commands through CLion, the Serial Monitor plugin should be installed.
+
+Start by opening the settings window like at the start of step 5 of this guide.
+Under the settings, find and click the **"Plugins"** option.  
+Search for "serial" and install the **"Serial Port Monitor"** plugin.
+
+![Screenshot of CLion "Settings" window with the "Plugins" option selected and "Serial Port Monitor" selected.](docs/images/clion-serial-monitor-install.png?raw=true)
+
+After installation click **"OK"** to save and close the settings.
+
+Find the **"Serial Port Monitor"** button at the bottom left corner of the interface.
+
+![Screenshot of CLion "Serial Port Monitor" button.](docs/images/clion-serial-monitor-button.png?raw=true)
+
+Select the COM port and make sure to match the connection settings before clicking **"Connect"**.  
+**Note: The correct COM port is system specific and as such, is likely to be different that the screenshots. If there are multiple COM ports available, try each one until you get a connection and start seeing messages.**
+
+![Screenshot of CLion "Serial Port Monitor" connection settings.](docs/images/clion-serial-monitor-connect-settings.png?raw=true)
+
+With **both** the Pico and the Debug Probe connected, the program should now blink the LED on the Pico and print "Blink" on the console.
+
+![Screenshot of CLion "Serial Port Monitor" showing terminal output](docs/images/clion-serial-monitor-output.png?raw=true)
+
+If the device outputs HEX numbers, disable **"HEX view"** by clicking the following button:
+
+![Screenshot of CLion "Serial Port Monitor" with the HEX view button highlighted](docs/images/clion-serial-monitor-hex-view.png?raw=true)
+
+If there is no output, double check the wiring of the Debug Probe and if there are multiple COM ports available, try each one.
+
+## IDE Configuration - CLion - Linux
+
+On Ubuntu 16.04 or later, you can install CLion as a snap package using the following command:
+
+```
+sudo snap install clion --classic
+```
+
+On other distros, you can download CLion [here](https://www.jetbrains.com/clion/download/#section=linux).
+
+**Note: These instructions have been tested on Ubuntu 22.04 LTS and as such, commands and requisite package names might be different on other distros.**
+
+**Note: CLion has a long standing issue with OpenOCD and file paths that have spaces in them.  
+To avoid any issues, clone the SDK and the requisite tools using a file path with no spaces in it.  
+All embedded projects should also be created using file paths that have no spaces in them.  
+This guide uses the file path "/home/\<user>/pico (or ~/pico)" for this reason.**  
+Should you want to use a different path (while still maintaining the no spaces policy), replace **"~/pico"** with your own location.
+
+### Step 1: Installing prerequisites
+
+Before starting the installation, it is recommended to update all the package repositories and upgrade all installed packages.  
+This can be done using the following commands:
+
+```
+sudo apt update
+sudo apt upgrade
+```
+
+To install all the prerequisite software, run the following command:
+
+```
+sudo apt install git python3 build-essential gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib libtool pkg-config libusb-1.0-0-dev
+```
+
+---
+
+### Step 2: Cloning the SDK
+
+Clone the Pico SDK using the following terminal commands.  
+**Note: At the time of writing, the latest version of the SDK (v2.1.0) has some broken interactions with FreeRTOS. Using the earlier 2.0.0 version fixes the issues.**
+
+```
+mkdir ~/pico
+cd ~/pico
+git clone https://github.com/raspberrypi/pico-sdk.git
+cd pico-sdk
+git submodule update --init
+git checkout tags/2.0.0
+```
+
+---
+
+### Step 3: Installing OpenOCD
+
+On Linux, the simplest way to install OpenOCD is to build it from sources and install it.  
+This can be done using the following commands:
+
+```
+cd ~/pico
+git clone https://github.com/raspberrypi/openocd.git
+cd openocd
+./bootstrap
+./configure --disable-werror
+make
+sudo make install
+```
+
+To allow OpenOCD to be called without sudo, run the following commands to update the udev rules:
+
+```
+sudo cp ~/pico/openocd/contrib/60-openocd.rules /etc/udev/rules.d/
+sudo udevadm control --reload
+sudo udevadm trigger
+```
+
+After the installation, run the following command to fix a small error in one of the config files:
+
+```
+sudo sed -i "s|rp2040-core0|rp2040|g" "/usr/local/share/openocd/scripts/board/pico-debug.cfg"
+```
+
+---
+
+### Step 4: Setting up CLion for building
+
+Clone the repository to a file path without spaces in it using the cloning instructions at the top of the page.
+
+Finally, launch CLion, and open the folder containing the cloned repository.  
+On the **Open Project Wizard** window, check the box labeled **"Reload CMake project on editing..."** and in the box labeled **"Environment"** add the environment variable `PICO_SDK_PATH=~\pico\pico-sdk`.
+
+**Note: Screenshot is from the Windows version of this guide, make sure to add the correct path from above.**
+![Screenshot of CLion Open Project Wizard window](docs/images/new-project-settings.jpg?raw=true)
+
+CMake should now configure the project (if there is an warning about picotool, it can be ignored safely).
+
+After successful configuration, the output should look like this:
+
+**Note: Screenshot is from the Windows version of this guide, but the output should be the same apart from the file path.**
+![Screenshot of CMake output after successful configuration](docs/images/cmake-configure-done.png?raw=true)
+
+It should now be possible to build the project using the **"Build"** button at the top left corner of the window.
+
+![Screenshot of CLion "Build" button](docs/images/clion-build.png?raw=true)
+
+After the build finishes, the output should look something like this:
+
+![Screenshot of the output from a successful build](docs/images/cmake-build-success.png?raw=true)
+
+---
+
+### Step 5: Setting up CLion for programming/debugging
+
+First, wire up the Raspberry Pi Debug Probe according to the instructions from [here](https://www.raspberrypi.com/documentation/microcontrollers/debug-probe.html).  
+Note that on the Pico W, the JST header is in a slightly different location.  
+**Take extra care when connecting the small JST headers, using excessive force can cause damage to the headers.**
+
+At the top right corner of the CLion interace, click the menu button and find and click the **"Settings..."** option.
+
+![Screenshot of CLion "Menu" button](docs/images/clion-menu.png?raw=true)
+![Screenshot of CLion "File" menu with "Settings" option marked](docs/images/clion-menu-settings.png?raw=true)
+
+Under **"Embedded Development"**, select the **"RTOS Integration"** option.  
+Check the **"Enable RTOS Integration"** and select **"FreeRTOS"** from the dropdown.
+
+![Screenshot of "RTOS Integration" window](docs/images/clion-rtos-integration.png?raw=true)
+
+Click **"OK"** to save the settings and close the window.
+
+At the top left corner of the CLion interface, click on the project name, and then the **"Edit Configurations..."** option.
+
+![Screenshot of CLion project "Edit configurations" option](docs/images/clion-config-edit.png?raw=true)
+
+At the top right corner of the **"Run/Debug Configurations"** window, click the **"+"**-sign and then scroll down to find and click the **"OpenOCD Download & Run"** option.
+
+![Screenshot of CLion "Run/Debug Configurations" with the **"OpenOCD Download & Run"** option](docs/images/clion-openocd-config.png?raw=true)
+
+On the new window, click the **"Assist..."** button for the **"Board config file"** setting.
+
+![Screenshot of CLion "OpenOCD Download & Run" settings page](docs/images/clion-openocd-config-debug-board.png?raw=true)
+
+Start typing to search for **"pico-debug"**, find and select the **"pico-debug.cfg"** and click **"Use"**.
+
+![Screenshot of CLion "Board config](docs/images/clion-openocd-config-debug-board-search.png?raw=true)
+
+Configure **"Executable binary"** and the **"Download"** options to match the figure below.
+
+![Screenshot of CLion "Board config](docs/images/clion-openocd-config-complete.png?raw=true)
+
+Click **"OK"** to save and close the window.
+
+Connect the USB cables from **both** the Pico and the Debug Probe to the computer.
+
+Clicking the **"Run"** button at the top left corner of the CLion interface should now build and program the device.
+
+![Screenshot of CLion "Run" button](docs/images/clion-run.png?raw=true)
+
+Output from a successful programming (look for the line that reads **"Programming Finished"**):
+
+![Screenshot of the output from a successful programming](docs/images/openocd-program-success.png?raw=true)
+
+The program should now blink the LED on the Pico.
+
+---
+
+### Step 6: Setting up CLion Serial Monitor
+
+The Pico Debug Probe sends console prints (printf statements etc.) through a serial connection. To allow printing commands through CLion, the Serial Monitor plugin should be installed.
+
+**Note: On Ubuntu, access to serial devices is limited to users in the **"dialout"** group. To allow CLion to access the serial port, use the following command to add the user to the group:**
+
+```
+sudo usermod -aG dialout $USER
+```
+
+**To make sure the group is applied correctly, reboot the system.**
+
+Start by opening the settings window like at the start of step 5 of this guide.
+Under the settings, find and click the **"Plugins"** option.  
+Search for "serial" and install the **"Serial Port Monitor"** plugin.
+
+![Screenshot of CLion "Settings" window with the "Plugins" option selected and "Serial Port Monitor" selected.](docs/images/clion-serial-monitor-install.png?raw=true)
+
+After installation click **"OK"** to save and close the settings.
+
+Find the **"Serial Port Monitor"** button at the bottom left corner of the interface.
+
+![Screenshot of CLion "Serial Port Monitor" button.](docs/images/clion-serial-monitor-button.png?raw=true)
+
+Select the serial device and make sure to match the connection settings before clicking **"Connect"**.  
+**Note: The screenshots below are from the Windows version of CLion, on Linux the serial devices are named /dev/ttyACM0 (or /dev/ttyACM1 etc.). Everything else should work the same.**
+
+![Screenshot of CLion "Serial Port Monitor" connection settings.](docs/images/clion-serial-monitor-connect-settings.png?raw=true)
+
+With **both** the Pico and the Debug Probe connected, the program should now blink the LED on the Pico and print "Blink" on the console.
+
+![Screenshot of CLion "Serial Port Monitor" showing terminal output](docs/images/clion-serial-monitor-output.png?raw=true)
+
+If the device outputs HEX numbers, disable **"HEX view"** by clicking the following button:
+
+![Screenshot of CLion "Serial Port Monitor" with the HEX view button highlighted](docs/images/clion-serial-monitor-hex-view.png?raw=true)
+
+**Note: The debug probe also launches it's own serial device, so there should be two devices available (/dev/ttyACM0 and /dev/ttyACM1 for instance), try each to see which one is correct.**
+
+If there is no output, double check the wiring of the Debug Probe.
+
+## IDE Configuration - CLion - Mac
+
+To be added if necessary.
+
+## IDE Configuration - VSCode - Windows/Mac/Linux
+
+To be added if necessary.
