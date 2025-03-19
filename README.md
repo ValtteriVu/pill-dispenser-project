@@ -10,6 +10,13 @@ To clone the repository using HTTPS, use the following command:
 git clone https://gitlab.metropolia.fi/lansk/rpi-pico-minimal.git
 ```
 
+This command pulls the example project from git in to directory rpi-pico-minimal. 
+The directory can then be opened in CLion for editing/compiling the project. 
+
+Follow the instructions for your operating system to setup CLion to build RPi Pico projects. 
+Below you find instructions for Windows, Linux, and OSX (Mac).
+
+
 ## IDE Configuration - CLion - Windows
 
 **Note: CLion has a long standing issue with OpenOCD and file paths that have spaces in them.  
@@ -43,6 +50,12 @@ git clone https://github.com/raspberrypi/pico-sdk.git
 cd pico-sdk
 git submodule update --init
 ```
+
+CMake, the build generator of RPi Pico projects, need to know where the SDK is located.
+The easiest way to pass this information to CMake is through environment variable "PICO_SDK_PATH".
+On Windows the environment variables are set through "Edit environment variables for your account"
+
+![Screenshot of environment variable editor with PICO_SDK_PATH defined](docs/images/windows_environment_1.png?raw=true)
 
 ---
 
@@ -78,7 +91,7 @@ Create a new folder called **"bin"** and move openocd.exe and the two .dll files
 
 ### Step 4: Setting up CLion for building
 
-Clone the repository to a file path without spaces in it using the cloning instructions at the top of the page.
+Clone the rpi-pico-minimal repository to a file path without spaces in it using the cloning instructions at the top of the page.
 
 Finally, launch CLion, and open the folder containing the cloned repository.  
 On the **Open Project Wizard** window, check the box labeled **"Reload CMake project on editing..."** and in the box labeled **"Environment"** add the environment variable `PICO_SDK_PATH=C:\pico\pico-sdk`.
