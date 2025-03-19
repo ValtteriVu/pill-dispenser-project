@@ -397,7 +397,78 @@ If there is no output, double check the wiring of the Debug Probe.
 
 ## IDE Configuration - CLion - Mac
 
-To be added if necessary.
+### 1) Install Homebrew(If not installed already) and if you have an M1 or M2 mac install Rosetta
+
+``` 
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)" 
+/usr/sbin/softwareupdate --install-rosetta --agree-to-license
+```
+
+### 2) Install CMake
+
+```
+brew install cmake
+```
+
+### 3) Install cross compilation toolchain
+
+```
+brew install --cask gcc-arm-embedded
+```
+
+Now the tools will be installed in "PICO_TOOLCHAIN_PATH=/Applications/ArmGNUToolchain/13.2.rel1/arm-none-eabi/bin".
+Note that the path depends on the version of the toolchain that gets installed. Check the version after
+installling the toolchain to get the correct path.
+
+### 4)  Install openocd
+
+```
+brew install openocd
+```
+
+Getting the SDK and Examples
+
+```
+cd ~/
+mkdir pico
+cd pico
+
+git clone https://github.com/raspberrypi/pico-sdk.git --branch master
+cd pico-sdk
+git submodule update --init
+```
+Now your SDK is located where you have cloned it. You can get the path by running:
+
+```
+pwd
+```
+
+Then clone the examples.
+
+```
+cd ..
+git clone https://github.com/raspberrypi/pico-examples.git --branch master
+```
+place the following lines into ~/.bash_profile with the correct paths.
+If you use zshell place the lines in ~/.zprofile
+
+Note that the paths below must be changed to the paths used on your computer.
+
+export PICO_SDK_PATH="\<Path to where you cloned the pico-sdk>"
+
+export PICO_TOOLCHAIN_PATH="/Applications/ArmGNUToolchain/13.2.rel1/arm-none-eabi/bin"
+
+
+If you have issues with arm-gcc you may have to resinstall arm-gcc
+Fixing the arm-none-eabi-gcc issue
+
+```
+brew uninstall arm-none-eabi-gcc
+brew autoremove
+```
+
+Go to step 3)
+
 
 ## IDE Configuration - VSCode - Windows/Mac/Linux
 
