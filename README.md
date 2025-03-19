@@ -40,7 +40,7 @@ CMake, the build generator of RPi Pico projects, need to know where the C/C++ co
 The easiest way to pass this information to CMake is through environment variable "PICO_TOOLCHAIN_PATH".
 On Windows the environment variables are set through "Edit environment variables for your account"
 
-![Edit environment variables for your account](docs/images/windows_edit_env.png?raw=true)
+![Edit environment variables for your account](docs/images/Windows_edit_env.png?raw=true)
 
 ![Screenshot of environment variable editor with PICO_TOOLCHAIN_PATH defined](docs/images/windows_environment_1.png?raw=true)
 
