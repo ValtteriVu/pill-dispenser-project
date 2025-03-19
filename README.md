@@ -36,6 +36,12 @@ Run the installer and **make sure to tick the "Add path to environment variable"
 
 ![Screenshot of "Add path to environment variable" checkbox](docs/images/toolchain-path-checkbox.png?raw=true)
 
+CMake, the build generator of RPi Pico projects, need to know where the C/C++ compilef for RPi Pico is located.
+The easiest way to pass this information to CMake is through environment variable "PICO_TOOLCHAIN_PATH".
+On Windows the environment variables are set through "Edit environment variables for your account"
+
+![Screenshot of environment variable editor with PICO_TOOLCHAIN_PATH defined](docs/images/windows_environment_1.png?raw=true)
+
 ---
 
 ### Step 2: Cloning the SDK
@@ -55,7 +61,7 @@ CMake, the build generator of RPi Pico projects, need to know where the SDK is l
 The easiest way to pass this information to CMake is through environment variable "PICO_SDK_PATH".
 On Windows the environment variables are set through "Edit environment variables for your account"
 
-![Screenshot of environment variable editor with PICO_SDK_PATH defined](docs/images/windows_environment_1.png?raw=true)
+![Screenshot of environment variable editor with PICO_SDK_PATH defined](docs/images/windows_environment.png?raw=true)
 
 ---
 
