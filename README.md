@@ -6,8 +6,8 @@ This project implements a simple pill dispensing system using a Raspberry Pi Pic
 -Our pill dispenser can help elderly people to take their medicine on time.
 
 # Features
--Pill detection via sensor input
--LED indicators for system status (e.g. waiting for action, ready, error)
+#Pill detection via sensor input
+#LED indicators for system status (e.g. waiting for action, ready, error)
 
 # Tools used
 Raspberry Pi Pico
