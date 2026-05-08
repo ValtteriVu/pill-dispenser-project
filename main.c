@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "pico/stdlib.h"
-#define STRING 64
 #define MOTOR1 2
 #define MOTOR2 3
 #define MOTOR3 6
@@ -9,25 +8,18 @@
 #define OPTO 28
 #define PIEZO 27
 #define LED0 21
-#define TIME 30000000
-#define WAIT_TIME 200000
-bool sensor_triggered = false;
+#define TIME_MS 30000
+volatile bool sensor_triggered = false;
 
 void piezo_interrupt(uint gpio, uint32_t events);
-
-bool detect();
-
-void remove_newline(char *str, size_t len);
-
-bool get_input(char *str, int max);
 
 void motor_step(int count);
 
 void step(bool *seq);
 
-void run(int n, int p, bool c);
+void run(int step, int per_rev, bool calibrated);
 
-void status(bool c);
+void status(bool calibrated);
 
 bool calibrate(int *p);
 
@@ -47,9 +39,11 @@ int main() {
     const uint button_pin1 = 8;  //sw1
     int per_rev = 0;
     int count=0;
-    uint64_t last = time_us_64();
+
     bool calibrated = false;
     states state = button0;
+    absolute_time_t timeout = make_timeout_time_ms(0);
+
     //led
     gpio_init(LED0);
     gpio_set_dir(LED0, GPIO_OUT);
@@ -124,10 +118,12 @@ int main() {
 
                 if (count == 7) {
                     count =0;
+                    run(1,per_rev,calibrated);
                     state = button0;
                 }
-                uint64_t now = time_us_64();
-                if (now - last >= TIME) {
+
+                if (time_reached(timeout)) {
+                    sensor_triggered = false;
                     run(1, per_rev, calibrated);
                     sleep_ms(100);
                     if (!sensor_triggered) {
@@ -138,7 +134,7 @@ int main() {
                             sleep_ms(200);
                         }
                     }
-                    last = now;
+                    timeout= make_timeout_time_ms(TIME_MS);
                     ++count;
                 }
                 break;
@@ -192,8 +188,8 @@ bool calibrate(int *p) {
 }
 
 
-void status(bool c) {
-    if (c) {
+void status(bool calibrated) {
+    if (calibrated) {
         printf("Calibrated\n");
     } else {
         printf("Not calibrated\n");
@@ -201,11 +197,11 @@ void status(bool c) {
 }
 
 
-void run(int n, int p, bool c) {
-    if (!c) {
+void run(int step, int per_rev, bool calibrated) {
+    if (!calibrated) {
         printf("Error: not calibrated\n");
     }
-    int steps = p / 8 * n;
+    int steps = per_rev / 8 * step;
 
     motor_step(steps);
 
