@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "pico/stdlib.h"
+#include "hardware/i2c.h"
+#define EEPROM_ADDRESS 0x50
 #define MOTOR1 2
 #define MOTOR2 3
 #define MOTOR3 6
@@ -9,7 +11,22 @@
 #define PIEZO 27
 #define LED0 21
 #define TIME_MS 30000
+#define EEPROM_COUNT_ADDRESS 0x0010
+#define EEPROM_STATE_ADDRESS 0x0012
+#define EEPROM_REVO_ADDRESS 0x0014
+#define EEPROM_MOTOR_STATE_VALUE 0x0016
 volatile bool sensor_triggered = false;
+
+typedef struct {
+    uint16_t count;
+    bool calibrated;
+    uint16_t per_revo;
+    bool motor_state;
+}eeprom_data;
+
+int eeprom_read(uint16_t memory_addr);
+
+void eeprom_write(uint16_t memory_addr, uint16_t value);
 
 void piezo_interrupt(uint gpio, uint32_t events);
 
@@ -17,15 +34,16 @@ void motor_step(int count);
 
 void step(bool *seq);
 
-void run(int step, int per_rev, bool calibrated);
+void run(int step, uint16_t per_rev, bool calibrated);
 
 void status(bool calibrated);
 
-bool calibrate(int *p);
+bool calibrate(uint16_t *p);
 
 void led_blink(void);
 
 typedef enum {
+    start,
     button0,
     button1,
     calib,
@@ -37,12 +55,15 @@ typedef enum {
 int main() {
     const uint button_pin0 = 9; //sw0
     const uint button_pin1 = 8;  //sw1
-    int per_rev = 0;
-    int count=0;
-
-    bool calibrated = false;
-    states state = button0;
     absolute_time_t timeout = make_timeout_time_ms(0);
+    states state = start;
+
+
+    //i2c
+    i2c_init(i2c0,400000);
+    gpio_set_function(16, GPIO_FUNC_I2C);
+    gpio_set_function(17, GPIO_FUNC_I2C);
+
 
     //led
     gpio_init(LED0);
@@ -79,9 +100,29 @@ int main() {
     stdio_init_all();
     gpio_set_irq_enabled_with_callback(PIEZO, GPIO_IRQ_EDGE_FALL, true, piezo_interrupt);
 
+    eeprom_data data={0};
+    data.count = eeprom_read(EEPROM_COUNT_ADDRESS);
+    data.calibrated = eeprom_read(EEPROM_STATE_ADDRESS);
+    data.per_revo = eeprom_read(EEPROM_REVO_ADDRESS);
+    data.motor_state = eeprom_read(EEPROM_MOTOR_STATE_VALUE);
+
+
+
     while (true) {
 
         switch (state) {
+
+            case start:
+                if (data.calibrated) {
+                    if (data.motor_state) {
+                        printf("Power off detected\n");
+                    }
+                    state = dispense;
+                }
+                else {
+                    state = button0;
+                }
+                break;
 
             case button0:
                 printf("Waiting...\n");
@@ -97,8 +138,10 @@ int main() {
 
             case calib:
                 printf("Calibrating\n");
-                calibrated = calibrate(&per_rev);
-                status(calibrated);
+                data.calibrated = calibrate(&data.per_revo);
+                eeprom_write(EEPROM_STATE_ADDRESS,data.calibrated);
+                eeprom_write(EEPROM_REVO_ADDRESS,data.per_revo);
+                status(data.calibrated);
                 state = button1;
                 break;
 
@@ -116,15 +159,18 @@ int main() {
 
             case dispense:
 
-                if (count == 7) {
-                    count =0;
-                    run(1,per_rev,calibrated);
+                if (data.count == 7) {
+                    data.count =0;
+                    run(1,data.per_revo,data.calibrated);
+                    eeprom_write(EEPROM_COUNT_ADDRESS,0);
                     state = button0;
                 }
 
                 if (time_reached(timeout)) {
                     sensor_triggered = false;
-                    run(1, per_rev, calibrated);
+                    data.motor_state = true;
+                    eeprom_write(EEPROM_MOTOR_STATE_VALUE,data.motor_state);
+                    run(1, data.per_revo, data.calibrated);
                     sleep_ms(100);
                     if (!sensor_triggered) {
                         for (int i = 0; i <= 5; ++i) {
@@ -134,8 +180,15 @@ int main() {
                             sleep_ms(200);
                         }
                     }
+                    data.motor_state = false;
+                    eeprom_write(EEPROM_MOTOR_STATE_VALUE,data.motor_state);
                     timeout= make_timeout_time_ms(TIME_MS);
-                    ++count;
+                    data.count++;
+                    eeprom_write(EEPROM_COUNT_ADDRESS,data.count);
+
+                    printf("%d\n", data.per_revo);
+                    printf("%d\n", data.count);
+                    printf("%d\n", data.calibrated);
                 }
                 break;
         }
@@ -156,7 +209,7 @@ void led_blink(void) {
     }
 }
 
-bool calibrate(int *p) {
+bool calibrate(uint16_t *p) {
 
     int sum = 0;
     int error_sum=0;
@@ -197,7 +250,7 @@ void status(bool calibrated) {
 }
 
 
-void run(int step, int per_rev, bool calibrated) {
+void run(int step, uint16_t per_rev, bool calibrated) {
     if (!calibrated) {
         printf("Error: not calibrated\n");
     }
@@ -242,6 +295,28 @@ void step(bool *seq) {
 
 void piezo_interrupt(uint gpio, uint32_t events) {
     sensor_triggered = true;
+}
 
+int eeprom_read(uint16_t memory_addr){
+    uint8_t addr_buff[2];
+    uint8_t data_buff[2];
+    addr_buff[0] = memory_addr >> 8 & 0xFF;
+    addr_buff[1] = memory_addr & 0xFF;
 
+    i2c_write_blocking(i2c0, EEPROM_ADDRESS, addr_buff, 2, true);
+
+    i2c_read_blocking(i2c0, EEPROM_ADDRESS, data_buff, 2, false);
+    int data = data_buff[0] << 8 | data_buff[1];
+    return data;
+}
+
+void eeprom_write(uint16_t memory_addr, uint16_t value){
+    uint8_t data[4];
+    data[0] = memory_addr >> 8 & 0xFF;
+    data[1] = memory_addr & 0xFF;
+    data[2] = value >> 8 & 0xFF;
+    data[3] = value & 0xFF;
+
+    i2c_write_blocking(i2c0, EEPROM_ADDRESS, data, 4, false);
+    sleep_ms(5);
 }
