@@ -116,7 +116,10 @@ int main() {
                 if (data.calibrated) {
                     if (data.motor_state) {
                         printf("Power off detected\n");
+                        ++data.count;
+                        eeprom_write(EEPROM_COUNT_ADDRESS,data.count);
                     }
+
                     state = dispense;
                 }
                 else {
@@ -159,7 +162,7 @@ int main() {
 
             case dispense:
 
-                if (data.count == 7) {
+                if (data.count >= 7) {
                     data.count =0;
                     run(1,data.per_revo,data.calibrated);
                     eeprom_write(EEPROM_COUNT_ADDRESS,0);
@@ -180,12 +183,12 @@ int main() {
                             sleep_ms(200);
                         }
                     }
-                    data.motor_state = false;
-                    eeprom_write(EEPROM_MOTOR_STATE_VALUE,data.motor_state);
                     timeout= make_timeout_time_ms(TIME_MS);
                     data.count++;
                     eeprom_write(EEPROM_COUNT_ADDRESS,data.count);
-
+                    sleep_ms(10);
+                    data.motor_state = false;
+                    eeprom_write(EEPROM_MOTOR_STATE_VALUE,data.motor_state);
                     printf("%d\n", data.per_revo);
                     printf("%d\n", data.count);
                     printf("%d\n", data.calibrated);
